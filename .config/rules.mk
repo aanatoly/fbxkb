@@ -167,7 +167,7 @@ ifeq ($($(1)_install),)
 install : $(1)_install
 $(1)_install :
 	$(call summary,INSTALL  ,$$@)
-	$Qecho install -m 755 $(1) $(DESTDIR)$(BINDIR)
+	$Qinstall -m 755 $(1) $(DESTDIR)$(BINDIR)
 endif
 endef
 
@@ -186,7 +186,7 @@ ifeq ($($(1)_install),)
 install : $(1)_install
 $(1)_install :
 	$(call summary,INSTALL  ,$$@)
-	$Qecho install -m 755 $(1) $(DESTDIR)$(LIBDIR)
+	$Qinstall -m 755 $(1) $(DESTDIR)$(LIBDIR)
 endif
 endef
 
@@ -251,4 +251,3 @@ svnignore:
 	cat $$prop; \
 	svn propset svn:ignore --file $$prop .; \
 	rm -f $$prop
-

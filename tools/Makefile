@@ -3,8 +3,7 @@ TOPDIR := ..
 
 SCRIPT = options.sh
 install:
-	$(install) 755 $(LIBEXECDIR)/fbxkb 755 $(SCRIPT)
-
+	$Qinstall -m 755 $(SCRIPT) $(LIBEXECDIR)/fbxkb
 
 
 include $(TOPDIR)/.config/rules.mk
