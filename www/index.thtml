@@ -1,0 +1,13 @@
+fbxkb is  <a href="http://www.freedesktop.org/Standards/wm-spec">NETWM</a> compliant keyboard indicator and switcher. It shows a flag of current keyboard in a systray area and allows you to switch to another one.
+
+ <br> <br>
+<p align="center" style="margin: 2px;">
+
+<img src="images/xus.png"  alt="us keyboard">
+<img src="images/xru.png"  alt="us keyboard">
+</p> <br> <br>
+It's written in C and uses the <a href="http://www.gtk.org">GTK+-2.4</a> library only (no GNOME is needed).
+<br>
+<p>Latest version is <a href="http://sourceforge.net/project/showfiles.php?group_id=121660">fbxkb-0.6</a>
+</p>
+

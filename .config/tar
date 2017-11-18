@@ -1,0 +1,25 @@
+#!/bin/bash
+
+function usage()
+{
+    echo "Usage: tar <name>"
+    echo "E.g: tar fbpanel-4.5"
+    exit $1
+}
+
+if [ $# -ne 1 ]; then
+    usage 1
+fi
+
+set -e
+sdir=`pwd`
+tdir=`mktemp -d`
+cp `dirname $0`/tar_excludes.txt $tdir
+
+cd $tdir
+ln -sf "$sdir" "$1"
+
+tar ${V:+v}hjcf /tmp/$1.tar.bz2 --exclude-from tar_excludes.txt "$1"
+cd /tmp
+rm -rf "$tdir"
+echo "    `du -hs /tmp/$1.tar.bz2`"

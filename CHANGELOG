@@ -1,0 +1,29 @@
+0.6
+* Makefile does not include .svn in a tarball
+* if xorg has no groups fbxkb creates fallback 'us' group to display
+* some sanity checks
+* code clean up
+* 1-pixel border around a flag was removed
+
+0.5 
+* fixed crash when there is no 'pc/pc' in description
+* using X server description of the group if available
+
+0.4
+* Fixed Bugs
+  * 1048450	start up code issues
+  * 1048456	race condition when restarting
+
+0.3
+* New Features
+  * add right-click menu with 'exit' and 'about' options
+
+0.2
+* New Features
+  * removing _XKB_RULES_NAMES usage from code
+  * adding menu with country flags
+
+0.1
+* New Features
+  * initial code base
+  * submiting code to sf              

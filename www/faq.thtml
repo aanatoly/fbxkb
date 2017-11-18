@@ -1,0 +1,46 @@
+<h2>Frequently Asked Questions about fbxkb</h2>
+<ol>
+<li><a href="#q1">How it knows what is current keyboard</a></li>
+<li><a href="#q2">How it knows what are alternative keyboards</a></li>
+<li><a href="#q3">Why I have no alternative keyboards</a></li>
+<li><a href="#q4">How can I add more keyboards</a></li>
+</ol>
+<br>
+<hr>
+
+<a name="q1"></a><b>Q1. How it knows what is current keyboard</b>
+<p style="margin-left: 10px; padding: 0px">It asks X server
+</p>
+
+<a name="q2"></a><b>Q2. How it knows what are alternative keyboards</b>
+<p style="margin-left: 10px; padding: 0px">It asks X server
+</p>
+
+<a name="q3"></a><b>Q3. Why I have no alternative keyboards</b>
+<p style="margin-left: 10px; padding: 0px">Couse your X server does not have them. Add them to it
+and fbxkb will update its view automatically.
+</p>
+
+<a name="q4"></a><b>Q4. How can I add more keyboards to X server </b>
+<p style="margin-left: 10px; padding: 0px">You can use setxkbmap to do it.
+For example, to load 3 keyboards - english, german and italian (us, de, it) and to switch betwean them
+using both shifts, run this:</p>
+<pre>setxkbmap -option grp:switch,grp:shifts_toggle,grp_led:scroll us,de,it</pre>
+
+<p style="margin-left: 10px; padding: 0px">
+Alternatively, you can edit /etc/X11/XF86Config and restart X server, but any subsequent setxkbmap will overwrite
+those settings. Here is quote from my XF86Config
+</p>
+
+<pre>
+Section "InputDevice"
+        Identifier      "Keyboard0"
+        Driver          "kbd"
+        Option          "XkbLayout"     "us,ru(phonetic)"
+        Option          "XkbOptions"    "grp:shifts_toggle,grp_led:scroll"
+EndSection
+</pre>
+<p style="margin-left: 10px; padding: 0px">
+And same thing with setxkbmap
+</p>
+<pre>setxkbmap -option grp:switch,grp:shifts_toggle,grp_led:scroll 'us,ru(phonetic)'</pre>
