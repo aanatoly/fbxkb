@@ -1,19 +1,19 @@
-# Generated at 2012-12-27 04:24:46.918298 
-# by command ['./configure', '--prefix=/tmp/fff', '--project_name=fbxkb']
+# Generated at 2017-11-18 22:27:10.853454 
+# by command ['./configure', '--prefix=/usr']
 
-PREFIX := /tmp/fff
-EPREFIX := /tmp/fff
-BINDIR := /tmp/fff/bin
-SBINDIR := /tmp/fff/sbin
-LIBEXECDIR := /tmp/fff/libexec
-LIBDIR := /tmp/fff/lib
-SYSCONFDIR := /tmp/fff/etc
-DATADIR := /tmp/fff/share
-LOCALEDIR := /tmp/fff/share/locale
-INCLUDEDIR := /tmp/fff/include
-MANDIR := /tmp/fff/man
-INFODIR := /tmp/fff/info
-LOCALSTATEDIR := /tmp/fff/var
+PREFIX := /usr
+EPREFIX := /usr
+BINDIR := /usr/bin
+SBINDIR := /usr/sbin
+LIBEXECDIR := /usr/libexec
+LIBDIR := /usr/lib
+SYSCONFDIR := /usr/etc
+DATADIR := /usr/share
+LOCALEDIR := /usr/share/locale
+INCLUDEDIR := /usr/include
+MANDIR := /usr/man
+INFODIR := /usr/info
+LOCALSTATEDIR := /usr/var
 PROJECT_NAME := fbxkb
-GTK2_LIBS := -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgio-2.0 -lpangoft2-1.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo -lpango-1.0 -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
-GTK2_CFLAGS := -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/libdrm
+GTK2_LIBS := -lgtk-x11-2.0 -lgdk-x11-2.0 -lpangocairo-1.0 -latk-1.0 -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lfontconfig -lfreetype
+GTK2_CFLAGS := -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/libdrm -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/freetype2
