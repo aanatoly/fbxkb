@@ -210,7 +210,21 @@ get_flag(char *country_code)
 
     file[0] = country_code[0];
     file[1] = country_code[1];
-    RET(gdk_pixbuf_new_from_file_at_size(file, 24, 24, NULL));
+    GdkPixbuf *original = gdk_pixbuf_new_from_file(file, NULL);
+    if (!original)
+        RET(NULL);
+    int orig_w = gdk_pixbuf_get_width(original);
+    int orig_h = gdk_pixbuf_get_height(original);
+    int square_size = (orig_w > orig_h) ? orig_w : orig_h;
+    GdkPixbuf *square = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, square_size, square_size);
+    gdk_pixbuf_fill(square, 0x00000000); // transparent
+    int x_off = (square_size - orig_w) / 2;
+    int y_off = (square_size - orig_h) / 2;
+    gdk_pixbuf_copy_area(original, 0, 0, orig_w, orig_h, square, x_off, y_off);
+    g_object_unref(original);
+    GdkPixbuf *scaled = gdk_pixbuf_scale_simple(square, 30, 30, GDK_INTERP_BILINEAR);
+    g_object_unref(square);
+    RET(scaled);
 }
 
 /* looks up corrsct flag image for every language group and replaces
