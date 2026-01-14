@@ -1,0 +1,13 @@
+BasedOnStyle: Webkit
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AlignArrayOfStructures: Left
+BreakBeforeBraces: Linux
+# BreakBeforeBraces: Linux
+# AllowShortIfStatementsOnASingleLine: false
+# AllowShortFunctionsOnASingleLine: false
+# ContinuationIndentWidth: 4
+# BinPackParameters: false
+# AlignAfterOpenBracket: DontAlign
