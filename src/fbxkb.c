@@ -54,28 +54,6 @@ static GtkWidget* menu;
 static void Xerror_handler(Display* d, XErrorEvent* ev);
 static GdkFilterReturn filter(XEvent* xev, GdkEvent* event, gpointer data);
 
-static void tooltip_set()
-{
-    gchar* argv[] = { LIBEXECDIR "/fbxkb/options.sh", NULL };
-    gchar* text;
-    gint standard_output;
-    gsize len;
-    GIOChannel* gio;
-
-    ENTER;
-    if (!g_spawn_async_with_pipes(
-            NULL, argv, NULL, 0, NULL, NULL, NULL, NULL, &standard_output, NULL, NULL))
-        RET();
-    gio = g_io_channel_unix_new(standard_output);
-    if (g_io_channel_read_to_end(gio, &text, &len, NULL) == G_IO_STATUS_NORMAL) {
-        g_strchomp(text);
-        gtk_status_icon_set_tooltip_markup(icon, text);
-    }
-    g_io_channel_shutdown(gio, FALSE, NULL);
-    g_free(text);
-    RET();
-}
-
 static void menu_about(GtkWidget* widget, gpointer data)
 {
     gchar* authors[] = { "Anatoly Asviyan <aanatoly@users.sf.net>", NULL };
@@ -154,7 +132,6 @@ static void gui_extra_rebuild()
     if (menu)
         gtk_widget_destroy(menu);
     menu_create();
-    tooltip_set();
     RET();
 }
 
