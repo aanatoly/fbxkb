@@ -28,6 +28,7 @@ static int hide_default;
 static int display_version;
 static int print_on;
 static char* print_fmt = "%n:%c:%N";
+static int icon_size = 20;
 
 static GOptionEntry entries[] = {
     { "version", 0, 0, G_OPTION_ARG_NONE, &display_version, "Display the version and exit", NULL },
@@ -36,9 +37,9 @@ static GOptionEntry entries[] = {
     { "print", 'p', 0, G_OPTION_ARG_NONE, &print_on, "Print XKB group switches to stdout", NULL },
     { "fmt", 0, 0, G_OPTION_ARG_STRING, &print_fmt,
      "Format string for XKB switch messages, default is '%n:%c:%N' (%n=number, %c=sym, %N=name)", "FORMAT" },
+    { "size", 's', 0, G_OPTION_ARG_INT, &icon_size, "Set the size of flag icons (default 20)", "SIZE" },
     { NULL }
 };
-static char* desription = "row 1\nrow 2\n";
 
 static int cur_group;
 static int ngroups;
@@ -200,7 +201,7 @@ static GdkPixbuf* get_flag(char* country_code)
     int y_off = (square_size - orig_h) / 2;
     gdk_pixbuf_copy_area(original, 0, 0, orig_w, orig_h, square, x_off, y_off);
     g_object_unref(original);
-    GdkPixbuf* scaled = gdk_pixbuf_scale_simple(square, 30, 30, GDK_INTERP_BILINEAR);
+    GdkPixbuf* scaled = gdk_pixbuf_scale_simple(square, icon_size, icon_size, GDK_INTERP_BILINEAR);
     g_object_unref(square);
     RET(scaled);
 }
