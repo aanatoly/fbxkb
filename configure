@@ -1,387 +1,42 @@
-#!/usr/bin/python
-
-
-##########################################################
-###   Arg Parser                                       ###
-##########################################################
-
-import argparse, textwrap
-
-class ToggleAction(argparse.Action):
-    def __init__(self, **kw):
-        name = kw['option_strings'][0][2:]
-        if name.startswith('no-'):
-            name = name[3:]
-        kw['dest'] = name
-        kw['option_strings'] = [ '--no-' + name, '--' + name ]
-        kw['nargs'] = 0
-        kw['metavar'] = None
-        super(ToggleAction, self).__init__(**kw)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        if option_string and option_string.startswith('--no-'):
-            setattr(namespace, self.dest, False)
-        else:
-            setattr(namespace, self.dest, True)
-
-
-class SmartHelpFmt(argparse.RawDescriptionHelpFormatter):
-    def _format_action(self, action):
-        if type(action) == ToggleAction:
-            opts = action.option_strings
-            action.option_strings = [ '--[no-]' + action.dest ]
-            parts = super(SmartHelpFmt, self)._format_action(action)
-            action.option_strings = opts
-        else:
-            parts = super(SmartHelpFmt, self)._format_action(action)
-        return parts
-
-    def _format_usage(self, usage, actions, groups, prefix):
-        for g in groups:
-            print g
-        text = super(SmartHelpFmt, self)._format_usage(usage,
-            actions, groups, prefix)
-        # print "Usage", text
-        return text
-
-    def format_help(self):
-        text = super(SmartHelpFmt, self).format_help()
-        return text
-
-
-# Create help group with general '--help' option and with
-# specific '--help-GROUP' for every argument group
-class ArgParse(argparse.ArgumentParser):
-    def __init__(self, **kw):
-        self.help_names = []
-        self.help_groups = {}
-        self.default_group = None
-        kw['add_help'] = False
-        kw['formatter_class'] = SmartHelpFmt
-        super(ArgParse, self).__init__(**kw)
-        self.add_argument_group('help', 'Help options', None)
-        self.add_argument("-h", "--help", help = "Print help and exit",
-            action = 'store_true', group = 'help')
-
-    def add_argument_group(self, name, title=None, description=None,
-        default = None):
-        # print "add_argument_group: '%s'" % name, title, description, default
-        if name in self.help_groups:
-            raise BaseException("help group %s already exists" % name)
-        self.help_groups[name] = super(ArgParse,
-            self).add_argument_group(title, description)
-        if name != 'help' and len(name.split()) == 1:
-            self.add_argument("--help-" + name, group = 'help',
-                action = 'store_true',
-                help = "Help on " + title)
-        if default:
-            self.default_group = self.help_groups[name]
-        return self.help_groups[name]
-
-    def add_argument(self, *args, **kw):
-        # print "add_argument:", args, kw
-        if 'group' in kw:
-            group = self.help_groups[kw['group']]
-            del kw['group']
-            return group.add_argument(*args, **kw)
-        elif self.default_group:
-            return self.default_group.add_argument(*args, **kw)
-        else:
-            return self.add_argument(*args, **kw)
-
-
-    def format_help(self):
-        all = 'help' in self.help_names
-        if not all:
-            self.help_names = [ n[5:] for n in self.help_names]
-
-        formatter = self._get_formatter()
-
-        if all:
-            u = "%(prog)s "
-            for g in self._action_groups:
-                if g.title and g._group_actions:
-                    u += '[_%s_] ' % g.title.replace(' ', '_')
-            u = textwrap.fill(u,
-                initial_indent = ' ' * 15,
-                subsequent_indent = ' ' * 13,
-                break_long_words = False).strip().replace('_', ' ')
-
-            formatter.add_usage(u, None, [])
-            formatter.add_text(self.description)
-
-        if all:
-            self.help_names = self.help_groups.keys()
-
-        for name in self.help_names:
-            group = self.help_groups[name]
-            formatter.start_section(group.title)
-            formatter.add_text(group.description)
-            formatter.add_arguments(group._group_actions)
-            formatter.end_section()
-
-        if all:
-            formatter.add_text(self.epilog)
-
-        return formatter.format_help()
-
-    def parse_args(self, args=None, namespace=None):
-        a = super(ArgParse, self).parse_args(args, namespace)
-        self.help_names = [ n for n in dir(a) if
-            (n == 'help' or n.startswith("help_")) and getattr(a, n) ]
-        if self.help_names:
-            self.print_help()
-            exit(0)
-
-        return a
-
-
-##########################################################
-###   Noname                                           ###
-##########################################################
-
-import subprocess as sp, re, sys, os, datetime
-import traceback, tempfile, shutil
-import logging
-x = logging.getLogger('app')
-def init_log(debug, verbose, *args):
-    for name in args:
-        x = logging.getLogger(name)
-        if debug:
-            f = logging.Formatter("%(name)s (%(funcName)s:%(lineno)d) " +
-                ":: %(message)s")
-            verbose = True
-        else:
-            f = logging.Formatter("%(message)s")
-
-        h = logging.StreamHandler()
-        h.setFormatter(f)
-        x.addHandler(h)
-        if verbose:
-            x.setLevel(logging.DEBUG)
-        else:
-            x.setLevel(logging.INFO)
-
-xp = ArgParse()
-# xp.add_argument("--sysinstall", help = "(re)Install configure scripts",
-#     action = 'store_true')
-# xp.add_argument_group('app', 'app title', 'app desc')
-# xp.add_argument("--sysinstall", help = "(re)Install configure scripts",
-#     action = 'store_true', group = 'app')
-# xp.parse_args()
-
-##########################################################
-###   Variables                                        ###
-##########################################################
-
-p = xp
-vars = {}
-var_order = []
-args = None
-help_groups = {}
-stack = []
-def arg(name):
-    global stack, vars, help_groups
-
-    if name in stack:
-        raise BaseException("dep loop: second '" + name + "' in "
-            + str(stack + [name]))
-    stack.append(name)
-    x = vars[name]
-    if callable(x):
-        while callable(x):
-            x = x()
-        vars[name] = x
-    del stack[-1]
-    return x
-
-def var(name): return arg(name)
-
-def var_group_new(name, desc, long_desc = None, default = None):
-    global help_groups
-
-    if name in help_groups:
-        raise BaseException("Help group %s' already exists" % name)
-    help_groups[name] = p.add_argument_group(name, desc, long_desc, default)
-
-def var_new(name, **kw):
-    global vars, var_order
-
-    if not re.match('^[a-zA-Z_][0-9a-zA-Z_]*$', name):
-        raise BaseException("Illegal var name '%s'" % name)
-    if name in vars:
-        raise BaseException("var %s' already exists" % name)
-    if 'help' in kw:
-        if not 'group' in kw:
-            help_groups['app'].add_argument("--" + name, **kw)
-        else:
-            group = kw['group']
-            del kw['group']
-            help_groups[group].add_argument("--" + name, **kw)
-    d = None
-    if 'default' in kw:
-        d = kw['default']
-        if type(d) == str:
-            d = d.strip()
-    vars[name] = d
-    var_order.append(name)
-
-
-def var_new_from_pkg(vname, pname, extra = ""):
-    cmd = ['pkg-config', pname] + extra.split()
-    try:
-        sp.check_output(cmd)
-    except:
-        raise BaseException("%s failed" % ' '.join(cmd))
-    var_new(vname + '_libs', default = sp.check_output(cmd + ['--libs']))
-    var_new(vname + '_cflags', default = sp.check_output(cmd + ['--cflags']))
-
-
-def assign():
-    global vars
-    x.debug("assign")
-    for k in [ y for y in dir(args) if y[:1] != '_' ]:
-        vars[k] = getattr(args, k)
-        x.debug("vars[%s] = '%s'", k, vars[k])
-
-def write_config():
-    write_config_make()
-    # print v, var(v)
-
-def write_config_make():
-    now = datetime.datetime.now()
-    smake = "# Generated at %s \n# by command %s\n\n" % (now, sys.argv)
-    sc = "// Generated at %s \n// by command %s\n\n" % (now, sys.argv)
-
-    for name in var_order:
-        v = var(name)
-        # print name, type(v)
-        if not v:
-            continue
-        if type(v) == str:
-            v = v.replace('\n', '\\\n')
-            v = v.replace('"', '')
-        elif type(v) == bool:
-            v = int(v)
-
-        smake += "%s := %s\n" % (name.upper(), str(v))
-        if type(v) == str:
-            v = '"' + v + '"'
-        sc += '#define %s  %s\n' % (name.upper(), str(v))
-
-    x.info('Created config.mk')
-    open('config.mk', 'w').write(smake)
-    x.info('Created config.h')
-    open('config.h', 'w').write(sc)
-
-def init():
-    pass
-
-def resolve():
-    pass
-
-##########################################################
-###   Self Install                                     ###
-##########################################################
-
-def sysinstall():
-    x.info("Downloading latest code")
-
-    dtmp = tempfile.mkdtemp()
-    x.debug("sysuri '%s'", args.sysuri)
-    if args.sysuri.startswith('https://'):
-        cmd = 'svn co %s %s' % (args.sysuri, dtmp)
-    elif args.sysuri.startswith('file://'):
-        cmd = 'tar cf - -C %s . | tar xvf - -C %s' % (args.sysuri[7:], dtmp)
-    else:
-        raise BaseException("unknwon proto in uri " + args.sysuri)
-    x.debug('   %s', cmd)
-    sp.check_output(cmd, shell = True)
-    shutil.rmtree(os.path.join(dtmp, 'tests'))
-    for dirname, dirnames, filenames in os.walk(dtmp):
-        if '.svn' in dirnames:
-            sdir = os.path.join(dirname, '.svn')
-            x.debug("del %s", sdir)
-            shutil.rmtree(sdir)
-
-    x.info("Copy to current directory")
-    cmd = 'tar cf - -C %s . | tar xvf -' % dtmp
-    for i in sp.check_output(cmd, shell = True).split():
-        if os.path.isdir(i): continue
-        if i[:2] == './':
-            i = i[2:]
-        x.info("  %s", i)
-
-    shutil.rmtree(dtmp)
-
-    x.info("Creating makefiles")
-    for dirname, dirs, filenames in os.walk('./'):
-        if dirname[:2] == './':
-            dirname = dirname[2:]
-        level = len([ v for v in dirname.split('/') if v ])
-        dirs[:] = [ d for d in dirs if not re.match('(CVS)|(\..+)', d)]
-        topdir = '/'.join(['..'] * level)
-        if not topdir: topdir = '.'
-        x.debug("topdir '%s'", topdir)
-
-        text = '''
-TOPDIR := %s
-
-SUBDIRS := %s
-
-include $(TOPDIR)/.config/rules.mk
-'''
-        text = text % (topdir, ' '.join(dirs))
-        path = os.path.join(dirname, 'Makefile')
-        x.info("  %s", path)
-        file = open(path, 'w')
-        file.write(text)
-        file.close()
-        # x.debug('%s', text)
-
-    x.info("\nNow, you can test it. Run the commands:\n./configure\nmake V=1")
-
-##########################################################
-###   main                                             ###
-##########################################################
-
-def main():
-    global p, x, args
-
-    # p = argparse.ArgumentParser()
-    var_group_new('self', 'Configure install options')
-    # p.add_argument("--no-feat", "--feat", group = 'self',
-    #     help = "(re)Install configure scripts",
-    #     action = ToggleAction)
-    p.add_argument("--sysinstall", group = 'self',
-        help = "(re)install configure scripts",
-        action = 'store_true')
-    p.add_argument("--sysuri", group = 'self',
-        help = "alternative source code URI",
-        metavar = 'URI',
-        default = 'https://fborg.svn.sourceforge.net/svnroot/fborg/miniconf')
-
-    var_group_new('app', 'Application options', default = True)
-    # p.add_argument("-v", "--verbose", help="Verbosity level",
-    #     type=int, choices=[0, 1, 2], default=0, group = 'app')
-    # p.add_argument('-d', "--debug", help="Debug output", action='store_true',
-    #     group = 'app')
-    init()
-    args = p.parse_args()
-    init_log(False, 0, 'app')
-    # print args
-    if args.sysinstall:
-        sysinstall()
-    else:
-        assign()
-        resolve()
-        write_config()
-
-
-if __name__ == "__main__":
-    try:
-        exec(open('.config/vars.py', 'r').read().strip())
-    except:
-        x.info("Can't read .config/vars.py")
-        pass
-    main()
+#!/bin/bash
+
+git_version() {
+    local tag count
+
+    tag=$(git describe --abbrev=0 2>/dev/null)
+    if [[ -z $tag ]]; then
+        tag="0.1.0"
+    else
+        count=$(git rev-list --count "$tag"..HEAD)
+        [[ $count -gt 0 ]] && tag="$tag-dev.$count"
+    fi
+    echo "$tag"
+}
+
+PROJECT_NAME="fbxkb"
+PROJECT_VERSION=$(git_version)
+
+mkdir -p output
+
+CONF_MK=output/config.mk
+cat >"$CONF_MK" <<EOF
+PROJECT_NAME := ${PROJECT_NAME}
+PROJECT_VERSION := ${PROJECT_VERSION}
+
+PREFIX := ${PREFIX:-/usr}
+BIN_DIR = \$(PREFIX)/bin
+LIB_DIR = \$(PREFIX)/lib
+DATA_DIR = \$(PREFIX)/share/\$(PROJECT_NAME)/flags
+
+GTK2_CFLAGS := $(pkg-config gtk+-2.0 --cflags)
+GTK2_LIBS := $(pkg-config gtk+-2.0 --libs)
+EOF
+
+CONF_H=output/config.h
+cat >"$CONF_H" <<EOF
+#define PROJECT_NAME "${PROJECT_NAME}"
+#define PROJECT_VERSION "${PROJECT_VERSION}"
+
+#define PREFIX "${PREFIX:-/usr}"
+#define DATA_DIR PREFIX "/share/" PROJECT_NAME "/flags"
+EOF

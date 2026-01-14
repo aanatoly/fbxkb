@@ -1,4 +1,3 @@
-
 TOPDIR := ..
 
 fbxkb_src = fbxkb.c

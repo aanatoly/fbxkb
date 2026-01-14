@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "version.h"
 
 // #define DEBUG
 #include "dbg.h"
@@ -50,9 +49,9 @@ static GdkPixbuf* default_flag;
 static GtkStatusIcon* icon;
 static GtkWidget* menu;
 
-#define IMGPREFIX PREFIX "/share/fbxkb/images/"
 static void Xerror_handler(Display* d, XErrorEvent* ev);
 static GdkFilterReturn filter(XEvent* xev, GdkEvent* event, gpointer data);
+static void print_formatted_switch(int group_num, kbd_group_t* grp, const char* format);
 
 static void menu_about(GtkWidget* widget, gpointer data)
 {
@@ -142,6 +141,8 @@ static void gui_update()
     gtk_status_icon_set_from_pixbuf(icon, group[cur_group].flag);
     if (hide_default)
         gtk_status_icon_set_visible(icon, cur_group);
+    if (print_on)
+        print_formatted_switch(cur_group, &group[cur_group], print_fmt);
     RET();
 }
 
@@ -356,8 +357,6 @@ static GdkFilterReturn filter(XEvent* xev, GdkEvent* event, gpointer data)
             ERR("current group is bigger then total group number");
             cur_group = 0;
         }
-        if (print_on)
-            print_formatted_switch(cur_group, &group[cur_group], print_fmt);
         gui_update();
     } else if (xkbev->any.xkb_type == XkbNewKeyboardNotify) {
         DBG("XkbNewKeyboardNotify\n");
@@ -391,8 +390,8 @@ static void init()
     XSetLocaleModifiers("");
     XSetErrorHandler((XErrorHandler)Xerror_handler);
     dpy = GDK_DISPLAY();
-    if (chdir(IMGPREFIX)) {
-        ERR("can't chdir to %s\n", IMGPREFIX);
+    if (chdir(DATA_DIR)) {
+        ERR("can't chdir to %s\n", DATA_DIR);
         exit(1);
     }
     if (!(default_flag = get_flag("zz"))) {

@@ -1,9 +1,7 @@
-
 TOPDIR := ..
 
-install : 
-	install -m 755 -d $(DESTDIR)$(DATADIR)/fbxkb/images
-	install -m 644 *.png $(DESTDIR)$(DATADIR)/fbxkb/images
-
+install :
+	install -m 755 -d $(DESTDIR)$(DATA_DIR)
+	install -m 644 *.png $(DESTDIR)$(DATA_DIR)
 
 include $(TOPDIR)/.config/rules.mk
