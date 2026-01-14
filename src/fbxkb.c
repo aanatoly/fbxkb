@@ -26,11 +26,16 @@ typedef struct {
 
 static int hide_default;
 static int display_version;
+static int print_on;
+static char* print_fmt = "%n:%c:%N";
 
 static GOptionEntry entries[] = {
+    { "version", 0, 0, G_OPTION_ARG_NONE, &display_version, "Display the version and exit", NULL },
     { "hide-default", 0, 0, G_OPTION_ARG_NONE, &hide_default,
      "Hide flag when default keyboard is active", NULL },
-    { "version", 0, 0, G_OPTION_ARG_NONE, &display_version, "Display the version and exit", NULL },
+    { "print", 'p', 0, G_OPTION_ARG_NONE, &print_on, "Print XKB group switches to stdout", NULL },
+    { "fmt", 0, 0, G_OPTION_ARG_STRING, &print_fmt,
+     "Format string for XKB switch messages, default is '%n:%c:%N' (%n=number, %c=sym, %N=name)", "FORMAT" },
     { NULL }
 };
 static char* desription = "row 1\nrow 2\n";
@@ -247,8 +252,10 @@ static void get_group_flags(XkbDescRec* kbd_desc_ptr)
         *tmp = 0;
         /* if we have flag with same name, then replace default image.
          * otherwise do nothing */
-        if ((flag = get_flag(tok)))
+        if ((flag = get_flag(tok))) {
             group[no].flag = flag;
+            strncpy(group[no].sym, tok, 2);
+        }
         DBG("sym %s flag %sfound \n", tok, flag ? "" : "NOT ");
     }
 
@@ -317,6 +324,43 @@ out:
     XkbFreeKeyboard(kbd_desc_ptr, 0, True);
 }
 
+static void print_formatted_switch(int group_num, kbd_group_t* grp, const char* format)
+{
+    ENTER;
+    DBG("group: %d, fmt: '%s'\n", group_num, format);
+    if (!format)
+        return;
+    char buffer[1024];
+    int buf_pos = 0;
+    for (const char* p = format; *p && buf_pos < sizeof(buffer) - 1; p++) {
+        if (*p != '%') {
+            buffer[buf_pos++] = *p;
+            continue;
+        }
+        p++;
+        if (*p == 'n') {
+            int len = snprintf(buffer + buf_pos, sizeof(buffer) - buf_pos, "%d", group_num);
+            if (len > 0)
+                buf_pos += len;
+        } else if (*p == 'c') {
+            int len = snprintf(buffer + buf_pos, sizeof(buffer) - buf_pos, "%s", grp->sym);
+            if (len > 0)
+                buf_pos += len;
+        } else if (*p == 'N') {
+            int len = snprintf(buffer + buf_pos, sizeof(buffer) - buf_pos, "%s", grp->name);
+            if (len > 0)
+                buf_pos += len;
+        } else if (*p == '%') {
+            buffer[buf_pos++] = '%';
+        } else {
+            buffer[buf_pos++] = '%';
+            buffer[buf_pos++] = *p;
+        }
+    }
+    buffer[buf_pos] = '\0';
+    printf("%s\n", buffer);
+}
+
 static GdkFilterReturn filter(XEvent* xev, GdkEvent* event, gpointer data)
 {
     XkbEvent* xkbev;
@@ -334,6 +378,8 @@ static GdkFilterReturn filter(XEvent* xev, GdkEvent* event, gpointer data)
             ERR("current group is bigger then total group number");
             cur_group = 0;
         }
+        if (print_on)
+            print_formatted_switch(cur_group, &group[cur_group], print_fmt);
         gui_update();
     } else if (xkbev->any.xkb_type == XkbNewKeyboardNotify) {
         DBG("XkbNewKeyboardNotify\n");
@@ -398,10 +444,9 @@ int main(int argc, char* argv[])
 
     ENTER;
     gtk_set_locale();
-    context = g_option_context_new("- X11 keyboard switcher");
+    context = g_option_context_new("- X11 keyboard indicator and switcher");
     g_option_context_add_main_entries(context, entries, NULL);
     g_option_context_add_group(context, gtk_get_option_group(TRUE));
-    g_option_context_set_description(context, desription);
     if (!g_option_context_parse(context, &argc, &argv, &error)) {
         g_print("%s\n", error->message);
         exit(1);
