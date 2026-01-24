@@ -52,23 +52,6 @@ $(1)_install :
 endif
 endef
 
-define lib_rules
-all : lib$(1).so
-CLEANLIST += lib$(1).so
-$(eval $(1)_cflags += -fPIC)
-$(foreach o,$($(1)_src:%.c=%),$(eval $(call obj_rules,$(o),$(1))))
-
-lib$(1).so : $($(1)_src:%.c=%.o)
-	$(CC) $$? $(LDFLAGS) $($(1)_libs) -shared -o $$@
-
-ifeq ($($(1)_install),)
-install : $(1)_install
-$(1)_install :
-	install -m 755 -d $(DESTDIR)$(LIB_DIR)
-	install -m 755 $(1) $(DESTDIR)$(LIB_DIR)
-endif
-endef
-
 targets = $(filter %_type,$(.VARIABLES))
 $(foreach t,$(targets),$(eval $(call $($(t))_rules,$(t:_type=))))
 

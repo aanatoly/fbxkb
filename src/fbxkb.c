@@ -55,10 +55,10 @@ static void print_formatted_switch(int group_num, kbd_group_t* grp, const char* 
 
 static void menu_about(GtkWidget* widget, gpointer data)
 {
-    gchar* authors[] = { "Anatoly Asviyan <aanatoly@users.sf.net>", NULL };
+    gchar* authors[] = { "Anatoly Asviyan", NULL };
     ENTER;
     gtk_show_about_dialog(NULL, "authors", authors, "comments", "X11 keyboard language switcher",
-        "license", "GPLv2", "version", PROJECT_VERSION, "website", "http://fbxkb.sf.net",
+        "license", "GPLv2", "version", PROJECT_VERSION, "website", "https://github.com/aanatoly/fbxkb",
         "logo-icon-name", "preferences-desktop-keyboard", NULL);
     RET();
 }
