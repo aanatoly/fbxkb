@@ -234,6 +234,7 @@ static void get_group_flags(XkbDescRec* kbd_desc_ptr)
         if ((flag = get_flag(tok))) {
             group[no].flag = flag;
             strncpy(group[no].sym, tok, 2);
+            group[no].sym[2] = '\0';
         }
         DBG("sym %s flag %sfound \n", tok, flag ? "" : "NOT ");
     }
